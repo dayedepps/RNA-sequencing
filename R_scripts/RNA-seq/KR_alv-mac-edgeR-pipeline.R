@@ -299,6 +299,9 @@ plot(
   ylim = c(0, 1))
 dev.off()
 
+# Remove the raw counts object not used anymore below
+rm(raw)
+
 
 # Normalisation of data ---------------------------------------------------
 
@@ -350,7 +353,7 @@ rm(i)
 # Again, it seems the larger library size increases the detection of lowly
 # expressed genes, but does not visibly affect highly expressed genes
 
-# Remove the temporary object containing the raw log2(cpm)
+# Remove the temporary object containing the normalised log2(cpm)
 rm(log2_cpm_norm)
 
 
@@ -397,4 +400,167 @@ ggplot(MDS.data) +
     title = element_text(size = rel(2)),
     axis.text = element_text(size = rel(2))
     )
+dev.off()
+
+# Remove the temporary variable
+rm(MDS, MDS.data)
+
+
+# MDS using only 2H samples -----------------------------------------------
+
+
+# Extract the subset of samples
+MDS.data = plotMDS(
+  filt_rm_rRNA_norm[,grep('2H', colnames(filt_rm_rRNA_norm))],
+  top=nrow(filt_rm_rRNA_norm))
+
+# Extract the coordinates for each sample
+MDS.data = data.frame(MDS.data$cmdscale.out)
+
+# Use the sample name to annotate the coordinate with sample information
+MDS.data = cbind(MDS.data, strsplit2(rownames(MDS.data), '_'))
+
+# Rename the columns of the data frame for convenience
+colnames(MDS.data) = c('x', 'y', 'Animal', 'Infection', 'Time')
+
+# Force the order of Infection levels to have TB in second position
+MDS.data$Infection = factor(MDS.data$Infection, levels = c('CN','TB','MB'))
+
+# Draw the MDS plot using ggplot2
+pdf(file = 'MDS.2H.pdf', width = 12, height = 10)
+ggplot(MDS.data) +
+  geom_point(aes(
+    x=x,
+    y=y,
+    colour=Infection,
+    shape=Infection),
+    size=5) +
+  ggtitle('2 hours post-infection') +
+  xlab('Dimension 1') +
+  ylab('Dimension 2') +
+  geom_text(aes(label=Animal, x=x, y=y, vjust=-1), size=4) +
+  theme(
+    title = element_text(size = rel(2)),
+    axis.text = element_text(size = rel(2))
+  )
+dev.off()
+
+
+# MDS using only 6H samples -----------------------------------------------
+
+
+# Extract the subset of samples
+MDS.data = plotMDS(
+  filt_rm_rRNA_norm[,grep('6H', colnames(filt_rm_rRNA_norm))],
+  top=nrow(filt_rm_rRNA_norm))
+
+# Extract the coordinates for each sample
+MDS.data = data.frame(MDS.data$cmdscale.out)
+
+# Use the sample name to annotate the coordinate with sample information
+MDS.data = cbind(MDS.data, strsplit2(rownames(MDS.data), '_'))
+
+# Rename the columns of the data frame for convenience
+colnames(MDS.data) = c('x', 'y', 'Animal', 'Infection', 'Time')
+
+# Force the order of Infection levels to have TB in second position
+MDS.data$Infection = factor(MDS.data$Infection, levels = c('CN','TB','MB'))
+
+# Draw the MDS plot using ggplot2
+pdf(file = 'MDS.6H.pdf', width = 12, height = 10)
+ggplot(MDS.data) +
+  geom_point(aes(
+    x=x,
+    y=y,
+    colour=Infection,
+    shape=Infection),
+    size=5) +
+  ggtitle('6 hours post-infection') +
+  xlab('Dimension 1') +
+  ylab('Dimension 2') +
+  geom_text(aes(label=Animal, x=x, y=y, vjust=-1), size=4) +
+  theme(
+    title = element_text(size = rel(2)),
+    axis.text = element_text(size = rel(2))
+  )
+dev.off()
+
+
+# MDS using only 24H samples -----------------------------------------------
+
+
+# Extract the subset of samples
+MDS.data = plotMDS(
+  filt_rm_rRNA_norm[,grep('24H', colnames(filt_rm_rRNA_norm))],
+  top=nrow(filt_rm_rRNA_norm))
+
+# Extract the coordinates for each sample
+MDS.data = data.frame(MDS.data$cmdscale.out)
+
+# Use the sample name to annotate the coordinate with sample information
+MDS.data = cbind(MDS.data, strsplit2(rownames(MDS.data), '_'))
+
+# Rename the columns of the data frame for convenience
+colnames(MDS.data) = c('x', 'y', 'Animal', 'Infection', 'Time')
+
+# Force the order of Infection levels to have TB in second position
+MDS.data$Infection = factor(MDS.data$Infection, levels = c('CN','TB','MB'))
+
+# Draw the MDS plot using ggplot2
+pdf(file = 'MDS.24H.pdf', width = 12, height = 10)
+ggplot(MDS.data) +
+  geom_point(aes(
+    x=x,
+    y=y,
+    colour=Infection,
+    shape=Infection),
+    size=5) +
+  ggtitle('6 hours post-infection') +
+  xlab('Dimension 1') +
+  ylab('Dimension 2') +
+  geom_text(aes(label=Animal, x=x, y=y, vjust=-1), size=4) +
+  theme(
+    title = element_text(size = rel(2)),
+    axis.text = element_text(size = rel(2))
+  )
+dev.off()
+
+
+# MDS using only 48H samples -----------------------------------------------
+
+
+# Extract the subset of samples
+MDS.data = plotMDS(
+  filt_rm_rRNA_norm[,grep('48H', colnames(filt_rm_rRNA_norm))],
+  top=nrow(filt_rm_rRNA_norm))
+
+# Extract the coordinates for each sample
+MDS.data = data.frame(MDS.data$cmdscale.out)
+
+# Use the sample name to annotate the coordinate with sample information
+MDS.data = cbind(MDS.data, strsplit2(rownames(MDS.data), '_'))
+
+# Rename the columns of the data frame for convenience
+colnames(MDS.data) = c('x', 'y', 'Animal', 'Infection', 'Time')
+
+# Force the order of Infection levels to have TB in second position
+MDS.data$Infection = factor(MDS.data$Infection, levels = c('CN','TB','MB'))
+
+# Draw the MDS plot using ggplot2
+pdf(file = 'MDS.48H.pdf', width = 12, height = 10)
+ggplot(MDS.data) +
+  geom_point(aes(
+    x=x,
+    y=y,
+    colour=Infection,
+    shape=Infection),
+    size=5) +
+  ggtitle('6 hours post-infection') +
+  xlab('Dimension 1') +
+  ylab('Dimension 2') +
+  geom_text(aes(label=Animal, x=x, y=y, vjust=-1), size=4) +
+  theme(
+    title = element_text(size = rel(2)),
+    axis.text = element_text(size = rel(2))
+  )
 dev.off()
