@@ -1,5 +1,5 @@
 
-# Libraries ---------------------------------------------------------------
+# Libraries and dependencies ----------------------------------------------
 
 library(biomaRt)
 library(Biobase)
@@ -564,3 +564,296 @@ ggplot(MDS.data) +
     axis.text = element_text(size = rel(2))
   )
 dev.off()
+
+# Remove the temporary object
+rm(MDS.data)
+
+
+# Create a design matrix for paired analysis ------------------------------
+
+
+head(pData(targets))
+
+## Generate the design matrix 
+# (ref. edgeR manual 31_03_13 version, section 3.4, page 29-31)
+# Based on the edgeR manual, the design matrix below is required for paired
+# data.
+# This will generate a design matrix that will contain the first animal
+# (N1178) as the intercept
+design = model.matrix(~Animal+Group, data=pData(targets))
+design[1:5,1:5]
+
+
+# Estimate the dispersions parameters and BCV -----------------------------
+
+
+# No need to use the estimateGLMCommonDisp for complex design (Anders, 2013)
+
+# Calculate the gene-specific dispersions
+DGElist <- estimateGLMTrendedDisp(filt_rm_rRNA_norm,design)
+names(DGElist)
+DGElist <- estimateGLMTagwiseDisp(DGElist,design)
+names(DGElist)
+
+# Save the resulting DGEList object
+save(DGElist, file="DGElist.RData")
+
+# Further compress the file to optimise disk space usage
+resaveRdaFiles('DGElist.RData')
+
+# Plot the estimates dispersion
+pdf(file = 'BCV.pdf', width = 10)
+plotBCV(DGElist) # function absent from edgeR 2.4.6
+dev.off()
+
+# Remove the DGEList prior to estimation
+rm(filt_rm_rRNA_norm)
+
+
+# Differential gene expression analysis -----------------------------------
+
+
+# Apply the fitted model to the 'DGElist' object
+glmfit <- glmFit(DGElist, design=design)
+
+# Save the resulting object to file
+save(glmfit, file="glmfit.RData")
+
+# Further compress the file to optimise disk space usage
+resaveRdaFiles('glmfit.RData')
+
+# Columns of the matrix estimating the glm fits
+# these will be compared to derive differential expression statistics
+colnames(glmfit$coefficients)
+
+# Function to ease the generation of a contrast vector
+glmLRT.contrast = function(contrast, glmfit)
+{
+  # contrast: formula of the form treatment1~treatment2
+  # Each component of the formula needs to uniquely match a column name in
+  # the glmFit object
+  treatment1 = as.character(contrast[2])
+  treatment2 = as.character(contrast[3])
+  # Initialises the vector of contrast for glmLRT with zeros
+  contrast.template = c(rep(0,ncol(glmfit$coefficients)))
+  # The left side of the formula (+1) will be compared to the rigth side (-1)
+  contrast.template[grep(pattern=treatment1, x=colnames(glmfit$coefficients))] = 1
+  contrast.template[grep(pattern=treatment2, x=colnames(glmfit$coefficients))] = -1
+  # return the vector
+  return(contrast.template)
+}
+save(glmLRT.contrast, file="glmLRT.contrast.function.RData")
+
+# Create a folder to save the files containing differential expression results
+dir.create(file.path(rootDir, 'topTags'))
+
+### MB versus TB
+## 2H MB vs TB
+# Perform the differential expression comparison
+lrt.2.MB.TB <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_2H~TB_2H, glmfit=glmfit)
+  )
+# check that the correct comparison has been made
+lrt.2.MB.TB$comparison
+# summarise the number of DE genes
+summary(decideTestsDGE(lrt.2.MB.TB, adjust.method="BH", p=0.05))
+# no DE gene here
+# extract the DE statistics
+MB.TB.2 = topTags(
+  lrt.2.MB.TB, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+# Save the object to file
+save(MB.TB.2, file="topTags/MB.TB.2H.RData")
+# Write the DE tables to a text file
+write.table(
+  x=cbind(ID=rownames(MB.TB.2), MB.TB.2$table),
+  file="topTags/MB.TB.2H.txt", sep="\t", quote=F, row.names=F
+  )
+# Clean up the objects
+rm(lrt.2.MB.TB, MB.TB.2)
+
+
+## 6H MB vs TB
+lrt.6.MB.TB <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_6H~TB_6H, glmfit=glmfit)
+  )
+lrt.6.MB.TB$comparison
+summary(decideTestsDGE(lrt.6.MB.TB, adjust.method="BH", p=0.05))
+MB.TB.6 = topTags(
+  lrt.6.MB.TB, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.TB.6, file="topTags/MB.TB.6H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.TB.6), MB.TB.6$table),
+  file="topTags/MB.TB.6H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.6.MB.TB, MB.TB.6)
+
+
+## 24H MB vs TB
+lrt.24.MB.TB <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_24H~TB_24H, glmfit=glmfit)
+  )
+lrt.24.MB.TB$comparison
+summary(decideTestsDGE(lrt.24.MB.TB, adjust.method="BH", p=0.05))
+MB.TB.24 = topTags(
+  lrt.24.MB.TB, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.TB.24, file="topTags/MB.TB.24H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.TB.24), MB.TB.24$table),
+  file="topTags/MB.TB.24H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.24.MB.TB, MB.TB.24)
+
+
+## 48H MB vs TB
+lrt.48.MB.TB <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_48H~TB_48H, glmfit=glmfit)
+  )
+lrt.48.MB.TB$comparison
+summary(decideTestsDGE(lrt.48.MB.TB, adjust.method="BH", p=0.05))
+MB.TB.48 = topTags(
+  lrt.48.MB.TB, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.TB.48, file="topTags/MB.TB.48H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.TB.48), MB.TB.48$table),
+  file="topTags/MB.TB.48H.txt", sep="\t", quote=F, row.names=F)
+rm(lrt.48.MB.TB, MB.TB.48)
+
+
+### MB versus CN
+## 2H MB vs CN
+lrt.2.MB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_2H~CN_2H, glmfit=glmfit)
+  )
+lrt.2.MB.CN$comparison
+summary(decideTestsDGE(lrt.2.MB.CN, adjust.method="BH", p=0.05))
+# 90 DE genes
+MB.CN.2 = topTags(
+  lrt.2.MB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.CN.2, file="topTags/MB.CN.2H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.CN.2), MB.CN.2$table),
+  file="topTags/MB.CN.2H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.2.MB.CN, MB.CN.2)
+
+## 6H MB vs CN
+lrt.6.MB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_6H~CN_6H, glmfit=glmfit)
+  )
+lrt.6.MB.CN$comparison
+summary(decideTestsDGE(lrt.6.MB.CN, adjust.method="BH", p=0.05))
+# 1386 DE genes
+MB.CN.6 = topTags(
+  lrt.6.MB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.CN.6, file="topTags/MB.CN.6H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.CN.6), MB.CN.6$table),
+  file="topTags/MB.CN.6H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.6.MB.CN, MB.CN.6)
+
+## 24H MB vs CN
+lrt.24.MB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_24H~CN_24H, glmfit=glmfit)
+  )
+lrt.24.MB.CN$comparison
+summary(decideTestsDGE(lrt.24.MB.CN, adjust.method="BH", p=0.05))
+
+MB.CN.24 = topTags(
+  lrt.24.MB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.CN.24, file="topTags/MB.CN.24H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.CN.24), MB.CN.24$table),
+  file="topTags/MB.CN.24H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.24.MB.CN, MB.CN.24)
+
+## 48H MB vs CN
+lrt.48.MB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=MB_48H~CN_48H, glmfit=glmfit)
+  )
+lrt.48.MB.CN$comparison
+summary(decideTestsDGE(lrt.48.MB.CN, adjust.method="BH", p=0.05))
+MB.CN.48 = topTags(
+  lrt.48.MB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(MB.CN.48, file="topTags/MB.CN.48H.RData")
+write.table(
+  x=cbind(ID=rownames(MB.CN.48), MB.CN.48$table),
+  file="topTags/MB.CN.48H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.48.MB.CN, MB.CN.48)
+
+### TB versus CN
+## 2H TB vs CN
+lrt.2.TB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=TB_2H~CN_2H, glmfit=glmfit)
+  )
+lrt.2.TB.CN$comparison
+summary(decideTestsDGE(lrt.2.TB.CN, adjust.method="BH", p=0.05))
+TB.CN.2 = topTags(
+  lrt.2.TB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(TB.CN.2, file="topTags/TB.CN.2H.RData")
+write.table(
+  x=cbind(ID=rownames(TB.CN.2), TB.CN.2$table),
+  file="topTags/TB.CN.2H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.2.TB.CN, TB.CN.2)
+
+## 6H TB vs CN
+lrt.6.TB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=TB_6H~CN_6H, glmfit=glmfit)
+  )
+lrt.6.TB.CN$comparison
+summary(decideTestsDGE(lrt.6.TB.CN, adjust.method="BH", p=0.05))
+TB.CN.6 = topTags(
+  lrt.6.TB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(TB.CN.6, file="topTags/TB.CN.6H.RData")
+write.table(
+  x=cbind(ID=rownames(TB.CN.6), TB.CN.6$table),
+  file="topTags/TB.CN.6H.txt", sep="\t", quote=F, row.names=F)
+rm(lrt.6.TB.CN, TB.CN.6)
+
+## 24H TB vs CN
+lrt.24.TB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=TB_24H~CN_24H, glmfit=glmfit)
+  )
+lrt.24.TB.CN$comparison
+summary(decideTestsDGE(lrt.24.TB.CN, adjust.method="BH", p=0.05))
+TB.CN.24 = topTags(
+  lrt.24.TB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(TB.CN.24, file="topTags/TB.CN.24H.RData")
+write.table(
+  x=cbind(ID=rownames(TB.CN.24), TB.CN.24$table),
+  file="topTags/TB.CN.24H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.24.TB.CN, TB.CN.24)
+
+## 48H TB vs CN
+lrt.48.TB.CN <- glmLRT(
+  glmfit, contrast=glmLRT.contrast(contrast=TB_48H~CN_48H, glmfit=glmfit)
+  )
+lrt.48.TB.CN$comparison
+summary(decideTestsDGE(lrt.48.TB.CN, adjust.method="BH", p=0.05))
+TB.CN.48 = topTags(
+  lrt.48.TB.CN, n=nrow(glmfit), adjust.method="BH", sort.by="p.value"
+  )
+save(TB.CN.48, file="topTags/TB.CN.48H.RData")
+write.table(
+  x=cbind(ID=rownames(TB.CN.48), TB.CN.48$table),
+  file="topTags/TB.CN.48H.txt", sep="\t", quote=F, row.names=F
+  )
+rm(lrt.48.TB.CN, TB.CN.48)
+
+# Cleanup
+rm(glmfit, glmLRT.contrast, design, DGElist)
