@@ -1,3 +1,4 @@
+
 # Assumes script 1_alv-mac-edgeR-pipeline.R was run previously
 
 # Libraries and dependencies ----------------------------------------------
@@ -119,7 +120,6 @@ rm(
     x=ls(), value=TRUE
     )
   )
-
 
 
 # Annotate the merged table with Ensembl gene identfiers ------------------

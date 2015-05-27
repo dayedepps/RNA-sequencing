@@ -18,7 +18,6 @@ rootDir = 'C:/Users/krue/Documents/Kevin-Logs/2013-08-27_AlvMac_RNAseq/04_comple
 setwd(rootDir)
 
 
-
 # Functions to automate the analyses --------------------------------------
 
 # This function converts bovine Ensembl gene identifiers to human ones
@@ -149,17 +148,16 @@ SIGORA.bovine = function(bovine_ensembl, folder.out, basename.out){
   Sys.unsetenv(myquerylist)
 }
 
+
 # Running SIGORA analyses using ensembl 71 annotations --------------------
 
 
+# Load the lists of DE genes in each contrasts
 load('DElists.RData')
-
-
 
 # Create a folder to save the files containing differential expression results
 sigora71.path = file.path(rootDir, 'SIGORA_Ensembl71')
 dir.create(sigora71.path)
-
 
 # MB-CN genes (90)
 MB.CN.2 = DElists$MB.CN.2

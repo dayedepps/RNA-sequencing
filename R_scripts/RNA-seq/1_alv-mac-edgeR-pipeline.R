@@ -82,6 +82,7 @@ sample = gsub(pattern='_S', replacement='', x=raw$samples$files)
 # Build a variable containing all information for the samples in the study
 targets = AnnotatedDataFrame(
   data=data.frame(
+    row.names = raw$samples$files,
     File=raw$samples$files,
     Sample=sample,
     Animal=animal,
