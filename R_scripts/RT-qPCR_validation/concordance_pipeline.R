@@ -521,3 +521,10 @@ sum(
 
 # Remove the temporary object
 rm(sig.MB_CN)
+
+
+
+# Cleanup -----------------------------------------------------------------
+
+# Remove the remaining temporary objects
+rm(RTqPCR.folder, sig.merged.8more)
