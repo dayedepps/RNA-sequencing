@@ -25,4 +25,4 @@ MacHugh, D.E.
 david.machugh@ucd.ie
 
 
-DOI badge: <link>
+DOI badge: [![DOI](https://zenodo.org/badge/13364/kevinrue/RNA-sequencing.svg)](http://dx.doi.org/10.5281/zenodo.18091)
