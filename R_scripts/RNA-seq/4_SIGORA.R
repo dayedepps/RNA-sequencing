@@ -159,6 +159,7 @@ load('DElists.RData')
 sigora71.path = file.path(rootDir, 'SIGORA_Ensembl71')
 dir.create(sigora71.path)
 
+# 2 hours post-infection
 # MB-CN genes (90)
 MB.CN.2 = DElists$MB.CN.2
 SIGORA.bovine(bovine_ensembl=MB.CN.2, folder.out=sigora71.path, basename.out='MB.CN.2')
@@ -182,6 +183,7 @@ all.contrasts.annotated[all.contrasts.annotated$ensembl_gene_id %in% common.2,c(
 rm(all.contrasts.annotated.RData)
 rm(common.2)
 
+# 6 hours post-infection
 # MB-CN genes (1386)
 MB.CN.6 = DElists$MB.CN.6
 SIGORA.bovine(bovine_ensembl=MB.CN.6, folder.out=sigora71.path, basename.out='MB.CN.6')
@@ -204,6 +206,7 @@ common.6 = DElists$MB.CN.6 [DElists$MB.CN.6 %in% DElists$TB.CN.6]
 SIGORA.bovine(bovine_ensembl=common.6, folder.out=sigora71.path, basename.out='common.6')
 rm(common.6)
 
+# 24 hours post-infection
 # MB-CN genes (5726)
 MB.CN.24 = DElists$MB.CN.24
 SIGORA.bovine(bovine_ensembl=MB.CN.24, folder.out=sigora71.path, basename.out='MB.CN.24')
@@ -226,6 +229,7 @@ common.24 = DElists$MB.CN.24 [DElists$MB.CN.24 %in% DElists$TB.CN.24]
 SIGORA.bovine(bovine_ensembl=common.24, folder.out=sigora71.path, basename.out='common.24')
 rm(common.24)
 
+# 48 hours post-infection
 # MB-CN genes (7514)
 MB.CN.48 = DElists$MB.CN.48
 SIGORA.bovine(bovine_ensembl=MB.CN.48, folder.out=sigora71.path, basename.out='MB.CN.48')
@@ -250,5 +254,16 @@ rm(diff.48)
 common.48 = DElists$MB.CN.48 [DElists$MB.CN.48 %in% DElists$TB.CN.48]
 SIGORA.bovine(bovine_ensembl=common.48, folder.out=sigora71.path, basename.out='common.48')
 rm(common.48)
+# 2565 genes no different between MB and TB, but different between each and CN
+tmp = intersect(DElists$MB.CN.48, DElists$TB.CN.48)
+similar.48 = tmp [which(!tmp %in% DElists$MB.TB.48)]
+SIGORA.bovine(bovine_ensembl=similar.48, folder.out=sigora71.path, basename.out='similar.48')
+rm(tmp, similar.48)
+# DE genes different between all three infection groups (CN, TB, MB)
+tmp = intersect(DElists$MB.CN.48, DElists$TB.CN.48)
+all.different.48 = intersect(tmp, DElists$MB.TB.48)
+SIGORA.bovine(bovine_ensembl=all.different.48, folder.out=sigora71.path, basename.out='all.different.48')
+rm(tmp, all.different.48)
+
 
 rm(DElists, myquerylist, sigora71.path, SIGORA.bovine, bovine2human_ensembl)
