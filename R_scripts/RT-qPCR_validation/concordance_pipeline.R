@@ -334,9 +334,26 @@ rm(
   logFC.target, stat.value, final.pvalue, contrast, logFC.available
   )
 
+# Add a column with stars for significance
+sig$sig.symbol = sapply(
+  X = sig$final.Pvalue,
+  FUN = function(x){
+    if (x < 0.001){
+      return('***')
+    } else if (x < 0.01){
+      return('**')
+    } else if (x < 0.05){
+      return('*')
+    } else{
+      return('')
+    }
+  })
+
 sig
 
 save(sig, file='sig.rda')
+
+
 
 
 # Import the corresponding RNAseq data ------------------------------------
@@ -444,24 +461,53 @@ table(sig.merged.8more$gene)
 # Note that we lost PIK3IP1 because all non-zero contrasts have 6 animals or less
 # TLR2 and IL6 have data for less than the expected 12 contrasts per gene
 
-# Concordance (DE in RT-qPCR and RNAseq) 0.4594595 (45.9%) - Nick had 71.9%
-# Quite relaxed concordance based only on DE status (ignores directionality)
+# Concordance 
+# Both tests are not significant
+# Both test are significant with the same direction of fold-change
+# 0.6621622 (66.2%)
 sum(
-  as.numeric(sig.merged.8more$final.Pvalue) < 0.05 &
-    as.numeric(as.character(sig.merged.8more$RNAseq.FDR)) < 0.05
-) / nrow(sig.merged.8more)
+  apply(
+    X = sig.merged.8more[,c('meanlogFC','sig.symbol','RNAseq.logFC','RNA.sig.symbol')],
+    MARGIN = 1,
+    FUN = function(x){
+      # PCR is not significant
+      if (x[[2]] == ''){
+        # Both technologies do not show significant DE
+        if (x[[4]] == ''){
+          return(TRUE)
+        }
+        # PCR is not significant, while RNA-seq is significant
+        else{
+          return(FALSE)
+        }
+      }
+      # PCR is significant
+      else{
+        # PCR is significant, while RNA-seq is not significant
+        if (x[[4]] == ''){
+          return(FALSE)
+        }
+        # Both are significant
+        else{
+          PCR = as.numeric(as.character(x[[1]]))
+          RNAseq = as.numeric(as.character(x[[3]]))
+          # Both technologies show the same direction of fold change
+          # then the product of fold-change values is positive
+          if ((PCR * RNAseq) > 0){
+            return(TRUE)
+          }
+          else {
+            return(FALSE)
+          }
+        }
+      }
+    }
+  )
+) / 
+  nrow(sig.merged.8more)
 
-# More stringent checking also direction of DE: 0.4594595 (45.9%)
-# same as above = reassuring
-# we didn't expect  genes to be DE in different directions between the platforms
-sum(
-  as.numeric(sig.merged.8more$final.Pvalue) < 0.05 &
-    as.numeric(as.character(sig.merged.8more$RNAseq.FDR)) < 0.05 &
-    ((sig.merged.8more$meanlogFC > 0 & sig.merged.8more$RNAseq.logFC > 0) |
-       (sig.merged.8more$meanlogFC < 0 & sig.merged.8more$RNAseq.logFC < 0))
-) / nrow(sig.merged.8more)
 
-# Correlation (all) Pearson 0.98 - Nick had 0.98
+# Correlation (all) Pearson 0.98
 plot(x = sig.merged.8more$meanlogFC, y = sig.merged.8more$RNAseq.logFC)
 cor.test(
   x = sig.merged.8more$meanlogFC,
@@ -494,6 +540,15 @@ genes.cor = data.frame(
 # Remove the objects now saved into genes.cor
 rm(cors, Ps)
 genes.cor
+
+#            cor      p.value
+# CCL4 0.9885694 1.507646e-09
+# FOS  0.9707618 1.602211e-07
+# IL10 0.9510528 2.037636e-06
+# IL1B 0.9881214 1.825799e-09
+# IL6  0.9737446 2.014189e-06
+# TLR2 0.9761297 2.387031e-02
+# TNF  0.9913064 3.854304e-10
 
 # Write the individual correlation coefficients to a text file
 write.table(
