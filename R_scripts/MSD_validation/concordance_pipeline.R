@@ -351,18 +351,52 @@ rm(sig.table, sig.RNAseq)
 # Concordance ignoring BSA (ALB) ------------------------------------------
 
 sig.merged.noBSA = sig.merged[sig.merged$Protein != 'BSA',]
+sig.merged.noBSA$RNAseq.logFC = as.numeric(as.character(sig.merged.noBSA$RNAseq.logFC))
 
-# 0.4166667 (41.7 %)
+# Concordance:
+# Both tests are not significant
+# Both test are significant with the same direction of fold-change
+
+# 0.8055556 (80.6 %)
 sum(
-  sig.merged.noBSA$final.Pvalue < 0.05 &
-    as.numeric(as.character(sig.merged.noBSA$RNAseq.FDR)) < 0.05 &
-    (
-      (sig.merged.noBSA$meanlogFC > 0 &
-         as.numeric(as.character(sig.merged.noBSA$RNAseq.logFC)) > 0) |
-        (sig.merged.noBSA$meanlogFC < 0 &
-           as.numeric(as.character(sig.merged.noBSA$RNAseq.logFC)) < 0)
+  apply(
+    X = sig.merged.noBSA[,c('meanlogFC','sig.symbol','RNAseq.logFC','RNA.sig.symbol')],
+    MARGIN = 1,
+    FUN = function(x){
+      # PCR is not significant
+      if (x[[2]] == ''){
+        # Both technologies do not show significant DE
+        if (x[[4]] == ''){
+          return(TRUE)
+        }
+        # PCR is not significant, while RNA-seq is significant
+        else{
+          return(FALSE)
+        }
+      }
+      # PCR is significant
+      else{
+        # PCR is significant, while RNA-seq is not significant
+        if (x[[4]] == ''){
+          return(FALSE)
+        }
+        # Both are significant
+        else{
+          PCR = as.numeric(as.character(x[[1]]))
+          RNAseq = as.numeric(as.character(x[[3]]))
+          # Both technologies show the same direction of fold change
+          # then the product of fold-change values is positive
+          if ((PCR * RNAseq) > 0){
+            return(TRUE)
+          }
+          else {
+            return(FALSE)
+          }
+        }
+      }
+    }
     )
-) /
+  ) / 
   nrow(sig.merged.noBSA)
 
 # Saving tables to temporary objects allows rapid visualsisation in RStudio
