@@ -336,8 +336,11 @@ rm(
 
 # Add a column with stars for significance
 sig$sig.symbol = sapply(
-  X = sig$final.Pvalue,
+  X = as.numeric(sig$final.Pvalue),
   FUN = function(x){
+    if (is.nan(x)){
+      return('')
+    }
     if (x < 0.001){
       return('***')
     } else if (x < 0.01){
@@ -464,7 +467,7 @@ table(sig.merged.8more$gene)
 # Concordance 
 # Both tests are not significant
 # Both test are significant with the same direction of fold-change
-# 0.6621622 (66.2%)
+# 0.7297297 (73.0%)
 sum(
   apply(
     X = sig.merged.8more[,c('meanlogFC','sig.symbol','RNAseq.logFC','RNA.sig.symbol')],
@@ -562,10 +565,12 @@ rm(genes.cor, sig.merged)
 # Concordance considering only MB_CN contrasts ----------------------------
 
 # Checking MB-CN contrasts only
-# (comparison with previous results obtained by Nicolas)
+# (comparison with previous results obtained by Nicolas who had ~70%)
 
 sig.MB_CN = sig.merged.8more[sig.merged.8more$contrast == 'MB-CN',]
 
+# Concordance 
+# 0.6666667 (66.7%)
 sum(
   apply(
     X = sig.MB_CN[,c('meanlogFC','sig.symbol','RNAseq.logFC','RNA.sig.symbol')],
