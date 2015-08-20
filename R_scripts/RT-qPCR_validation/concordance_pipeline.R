@@ -561,18 +561,51 @@ rm(genes.cor, sig.merged)
 
 # Concordance considering only MB_CN contrasts ----------------------------
 
-# since the concordance is so low when including all the contrasts
-# i want to check if I can find Nick's high concordance again
-# considering only the MB-CN contrasts (as he did)
+# Checking MB-CN contrasts only
+# (comparison with previous results obtained by Nicolas)
 
 sig.MB_CN = sig.merged.8more[sig.merged.8more$contrast == 'MB-CN',]
 
 sum(
-  as.numeric(sig.MB_CN$final.Pvalue) < 0.05 &
-    as.numeric(as.character(sig.MB_CN$RNAseq.FDR)) < 0.05 &
-    ((sig.MB_CN$meanlogFC > 0 & sig.MB_CN$RNAseq.logFC > 0) |
-       (sig.MB_CN$meanlogFC < 0 & sig.MB_CN$RNAseq.logFC < 0))
-) / nrow(sig.MB_CN)
+  apply(
+    X = sig.MB_CN[,c('meanlogFC','sig.symbol','RNAseq.logFC','RNA.sig.symbol')],
+    MARGIN = 1,
+    FUN = function(x){
+      # PCR is not significant
+      if (x[[2]] == ''){
+        # Both technologies do not show significant DE
+        if (x[[4]] == ''){
+          return(TRUE)
+        }
+        # PCR is not significant, while RNA-seq is significant
+        else{
+          return(FALSE)
+        }
+      }
+      # PCR is significant
+      else{
+        # PCR is significant, while RNA-seq is not significant
+        if (x[[4]] == ''){
+          return(FALSE)
+        }
+        # Both are significant
+        else{
+          PCR = as.numeric(as.character(x[[1]]))
+          RNAseq = as.numeric(as.character(x[[3]]))
+          # Both technologies show the same direction of fold change
+          # then the product of fold-change values is positive
+          if ((PCR * RNAseq) > 0){
+            return(TRUE)
+          }
+          else {
+            return(FALSE)
+          }
+        }
+      }
+    }
+  )
+) / 
+  nrow(sig.MB_CN)
 
 # Remove the temporary object
 rm(sig.MB_CN)
